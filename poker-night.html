@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Poker Night</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --felt: #0d2b1a; --felt-mid: #163d26; --felt-light: #1f5435;
+    --gold: #c9a84c; --gold-light: #e8c97a;
+    --text: #f5f0e8; --text-muted: #a89b7a;
+    --border: rgba(201,168,76,0.25);
+    --danger: #e74c3c; --success: #27ae60; --warning: #f39c12;
+    --card-bg: rgba(22,61,38,0.85);
+    --radius: 12px; --radius-lg: 18px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body); background: var(--felt); color: var(--text); min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(31,84,53,0.6) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.015) 40px);
+  }
+  #app { max-width: 480px; margin: 0 auto; padding: 0 16px 80px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .screen-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-top: 24px; }
+  .screen-header h2 { font-family: var(--font-display); font-size: 1.4rem; color: var(--gold); }
+  .back-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; font-family: var(--font-body); transition: all 0.15s; }
+  .back-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); backdrop-filter: blur(4px); }
+  .card-title { font-size: 0.7rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-muted); margin-bottom: 12px; }
+  label { display: block; font-size: 0.78rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-family: var(--font-body); font-size: 1rem; padding: 12px 14px; outline: none; transition: border-color 0.15s; -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+  select option { background: #1a3d25; }
+  .btn { display: block; width: 100%; padding: 14px; border-radius: var(--radius); border: none; font-family: var(--font-body); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .btn-primary { background: var(--gold); color: #1a1000; }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-danger { background: rgba(231,76,60,0.2); border: 1px solid rgba(231,76,60,0.4); color: #e74c3c; }
+  .btn-success { background: rgba(39,174,96,0.2); border: 1px solid rgba(39,174,96,0.4); color: #2ecc71; }
+  .btn-admin { background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); color: var(--gold); }
+  .btn-sm { padding: 7px 14px; font-size: 0.82rem; width: auto; display: inline-block; }
+  .btn + .btn { margin-top: 10px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-cell { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }
+  .stat-cell .val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 500; color: var(--gold); }
+  .stat-cell .lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; }
+  .player-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius); background: rgba(0,0,0,0.2); border: 1px solid var(--border); margin-bottom: 8px; }
+  .player-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--felt-light); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; color: var(--gold); flex-shrink: 0; }
+  .player-info { flex: 1; min-width: 0; }
+  .player-name { font-weight: 600; font-size: 0.95rem; }
+  .player-meta { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+  .player-chips { font-family: var(--font-mono); font-size: 0.85rem; color: var(--gold); text-align: right; }
+  .otp-display { text-align: center; padding: 24px; background: rgba(0,0,0,0.3); border: 1px dashed var(--gold); border-radius: var(--radius-lg); margin: 16px 0; }
+  .otp-code { font-family: var(--font-mono); font-size: 2.5rem; font-weight: 500; color: var(--gold); letter-spacing: 0.4em; margin: 8px 0; }
+  .otp-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.14em; }
+  .request-card { background: rgba(0,0,0,0.2); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; border-left: 3px solid var(--border); }
+  .request-card.pending { border-left-color: var(--warning); }
+  .request-card.approved { border-left-color: var(--success); }
+  .request-card.rejected { border-left-color: var(--danger); opacity: 0.6; }
+  .request-card.admin { border-left-color: var(--gold); }
+  .request-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .request-name { font-weight: 600; font-size: 0.9rem; }
+  .request-time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); }
+  .request-detail { font-size: 0.8rem; color: var(--text-muted); }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+  .status-badge.pending { background: rgba(243,156,18,0.2); color: var(--warning); }
+  .status-badge.approved { background: rgba(39,174,96,0.2); color: #2ecc71; }
+  .status-badge.rejected { background: rgba(231,76,60,0.2); color: var(--danger); }
+  .status-badge.host { background: rgba(201,168,76,0.2); color: var(--gold); }
+  .status-badge.admin { background: rgba(201,168,76,0.3); color: var(--gold-light); }
+  .status-badge.settled { background: rgba(100,100,100,0.3); color: #aaa; }
+  .settlement-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .settlement-row:last-child { border-bottom: none; }
+  .amount-pos { color: #2ecc71; font-family: var(--font-mono); font-weight: 500; }
+  .amount-neg { color: var(--danger); font-family: var(--font-mono); font-weight: 500; }
+  .payment-arrow { background: rgba(201,168,76,0.08); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; font-size: 0.9rem; }
+  .payment-arrow strong { color: var(--gold); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--felt-light); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 20px; font-size: 0.85rem; font-family: var(--font-mono); color: var(--text); z-index: 1000; opacity: 0; transition: all 0.25s; max-width: 320px; text-align: center; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .tab-nav { display: flex; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 16px; gap: 4px; }
+  .tab-btn { flex: 1; background: none; border: none; color: var(--text-muted); font-family: var(--font-body); font-size: 0.78rem; padding: 8px 4px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .tab-btn.active { background: var(--felt-light); color: var(--gold); font-weight: 600; }
+  .alert { padding: 12px 14px; border-radius: var(--radius); font-size: 0.85rem; margin-bottom: 14px; }
+  .alert-info { background: rgba(36,113,163,0.2); border: 1px solid rgba(36,113,163,0.4); color: #7fb3d3; }
+  .alert-warning { background: rgba(243,156,18,0.15); border: 1px solid rgba(243,156,18,0.3); color: var(--warning); }
+  .alert-admin { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); }
+  .buyout-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .buyout-row:last-child { border-bottom: none; }
+  .buyout-row .av-sm { width: 32px; height: 32px; border-radius: 50%; background: var(--felt-light); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: var(--gold); font-family: var(--font-mono); flex-shrink: 0; border: 1px solid var(--border); }
+  .buyout-row label { margin: 0; flex: 1; text-transform: none; font-size: 0.88rem; letter-spacing: 0; font-family: var(--font-body); color: var(--text); }
+  .buyout-row input { width: 90px; font-size: 0.9rem; padding: 8px 10px; }
+  .adj-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .adj-row:last-child { border-bottom: none; }
+  .adj-row .av-sm { width: 32px; height: 32px; border-radius: 50%; background: var(--felt-light); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: var(--gold); font-family: var(--font-mono); flex-shrink: 0; border: 1px solid var(--border); }
+  .adj-row .pname { flex: 1; font-size: 0.88rem; }
+  .adj-row .bi-count { font-family: var(--font-mono); font-size: 0.8rem; color: var(--gold); min-width: 64px; text-align: center; }
+  .adj-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .adj-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .history-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .history-card:hover { border-color: var(--gold); }
+  .history-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .history-name { font-family: var(--font-display); font-size: 1.05rem; color: var(--gold); }
+  .history-date { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); }
+  .history-meta { font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); }
+  .history-players { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .history-player-tag { background: rgba(201,168,76,0.1); border: 1px solid var(--border); border-radius: 10px; padding: 2px 10px; font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); }
+  .hd-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .hd-row:last-child { border-bottom: none; }
+  .home-hero { text-align: center; padding: 40px 0 28px; }
+  .home-hero .suits { font-size: 2.4rem; letter-spacing: 0.2em; margin-bottom: 16px; display: block; }
+  .home-hero h1 { font-family: var(--font-display); font-size: 2.4rem; color: var(--gold); line-height: 1.1; }
+  .home-hero p { color: var(--text-muted); font-size: 0.88rem; margin-top: 8px; font-family: var(--font-mono); letter-spacing: 0.05em; }
+  .rule-pill { display: inline-flex; gap: 6px; background: rgba(201,168,76,0.1); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-muted); margin: 4px; }
+  .rule-pill span { color: var(--gold); font-weight: 500; }
+  .rules-row { display: flex; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+  .text-center { text-align: center; }
+  .text-muted { color: var(--text-muted); font-size: 0.82rem; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .gold { color: var(--gold); }
+  .mono { font-family: var(--font-mono); }
+  .no-data { color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 16px 0; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="home-hero">
+      <span class="suits">♠ ♥ ♦ ♣</span>
+      <h1>Poker Night</h1>
+      <p>Settlement tracker for friendly games</p>
+    </div>
+    <div class="rules-row">
+      <div class="rule-pill">Buy-in: <span>$5</span></div>
+      <div class="rule-pill">Chips: <span>100</span></div>
+      <div class="rule-pill">Host fee: <span>$2.50 / player</span></div>
+    </div>
+    <div class="card">
+      <button class="btn btn-primary" onclick="showScreen('create-session')">♠ &nbsp;Host a New Game</button>
+      <button class="btn btn-secondary mt-8" onclick="showScreen('join-session')">Join a Session</button>
+      <button class="btn btn-secondary mt-8" onclick="openHistory()">◷ &nbsp;Session History</button>
+    </div>
+    <p class="text-center text-muted mt-8">All data stored locally in your browser.</p>
+  </div>
+
+  <!-- CREATE SESSION -->
+  <div id="screen-create-session" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">← Back</button>
+      <h2>Host a Game</h2>
+    </div>
+    <div class="card">
+      <div class="card-title">Your Details</div>
+      <label>Your Name</label>
+      <input type="text" id="host-name" placeholder="e.g. Alex" />
+      <label>Session Name</label>
+      <input type="text" id="session-name" placeholder="e.g. Friday Night Poker" />
+      <button class="btn btn-primary mt-16" onclick="createSession()">Create Session →</button>
+    </div>
+  </div>
+
+  <!-- HOST DASHBOARD -->
+  <div id="screen-host" class="screen">
+    <div class="screen-header">
+      <span class="status-badge host">HOST</span>
+      <h2 id="host-session-title">Session</h2>
+    </div>
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="hostTab('overview',this)">Overview</button>
+      <button class="tab-btn" onclick="hostTab('requests',this)">Requests <span id="pending-badge"></span></button>
+      <button class="tab-btn" onclick="hostTab('admin',this)">Admin</button>
+      <button class="tab-btn" onclick="hostTab('settle',this)">Settle</button>
+    </div>
+
+    <!-- Overview -->
+    <div id="host-tab-overview">
+      <div class="card">
+        <div class="card-title">Entry OTP — share with players</div>
+        <div class="otp-display">
+          <div class="otp-label">One-Time Entry Code</div>
+          <div class="otp-code" id="host-otp">------</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%" onclick="regenerateOtp()">⟳ Generate New OTP</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Players in Session</div>
+        <div id="host-player-list"><p class="no-data">No players yet.</p></div>
+      </div>
+      <div class="card">
+        <div class="stats-grid">
+          <div class="stat-cell"><div class="val" id="host-total-buyin">$0</div><div class="lbl">Total Buy-Ins</div></div>
+          <div class="stat-cell"><div class="val" id="host-total-fee">$0</div><div class="lbl">Host Fees</div></div>
+          <div class="stat-cell"><div class="val" id="host-total-chips">0</div><div class="lbl">Chips Out</div></div>
+          <div class="stat-cell"><div class="val" id="host-player-count">0</div><div class="lbl">Players</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Requests -->
+    <div id="host-tab-requests" style="display:none">
+      <div class="card">
+        <div class="card-title">Pending Buy-In Requests</div>
+        <div id="host-pending-requests"><p class="no-data">No pending requests.</p></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Request History</div>
+        <div id="host-request-history"><p class="no-data">No history yet.</p></div>
+      </div>
+    </div>
+
+    <!-- Admin -->
+    <div id="host-tab-admin" style="display:none">
+      <div class="card">
+        <div class="alert alert-admin">Admin controls — changes apply immediately without player approval.</div>
+        <div class="card-title">Add Player</div>
+        <label>Player Name</label>
+        <input type="text" id="add-player-name" placeholder="e.g. Raj" />
+        <button class="btn btn-admin mt-16" onclick="hostAddPlayer()">+ Add Player</button>
+        <p class="text-muted mt-8" style="font-size:0.78rem">Player still needs the OTP to log in.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Adjust Buy-Ins</div>
+        <p class="text-muted" style="font-size:0.8rem;margin-bottom:14px">Add or remove buy-ins directly to adjust the settlement.</p>
+        <div id="admin-adjust-list"><p class="no-data">No players yet.</p></div>
+      </div>
+    </div>
+
+    <!-- Settle -->
+    <div id="host-tab-settle" style="display:none">
+      <div class="card">
+        <div class="alert alert-warning">Enter each player's final chip count, then calculate.</div>
+        <div class="card-title">Final Chip Counts</div>
+        <div id="buyout-form"></div>
+        <button class="btn btn-primary mt-16" onclick="calculateSettlement()">Calculate Settlement →</button>
+      </div>
+      <div id="settlement-result" style="display:none">
+        <div class="card">
+          <div class="card-title">Player Summary</div>
+          <div id="settlement-table"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Who Pays Whom</div>
+          <div id="payment-list"></div>
+        </div>
+        <div class="card">
+          <button class="btn btn-admin" onclick="archiveSession()">✓ Save &amp; Archive This Session</button>
+          <p class="text-muted mt-8 text-center" style="font-size:0.78rem">Saves to history and locks the session.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOIN SESSION -->
+  <div id="screen-join-session" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">← Back</button>
+      <h2>Join a Game</h2>
+    </div>
+    <div class="card">
+      <div class="card-title">Enter Your Name</div>
+      <label>Name</label>
+      <input type="text" id="join-name" placeholder="e.g. Jordan" />
+      <button class="btn btn-primary mt-16" onclick="joinStep1()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- OTP VERIFY -->
+  <div id="screen-verify-otp" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('join-session')">← Back</button>
+      <h2>Enter Entry Code</h2>
+    </div>
+    <div class="card">
+      <div class="alert alert-info">Ask the host for the 6-digit code shown on their screen.</div>
+      <label>Entry Code</label>
+      <input type="text" id="otp-input" placeholder="6-digit code" maxlength="6"
+        style="text-align:center;font-size:1.5rem;letter-spacing:0.3em;font-family:var(--font-mono)" />
+      <button class="btn btn-primary mt-16" onclick="verifyOtp()">Join Session →</button>
+    </div>
+  </div>
+
+  <!-- PLAYER DASHBOARD -->
+  <div id="screen-player" class="screen">
+    <div class="screen-header">
+      <h2 id="player-greeting">Welcome</h2>
+      <span class="status-badge admin" id="player-admin-badge" style="display:none">ADMIN</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="val" id="p-buyins">0</div><div class="lbl">Buy-Ins</div></div>
+      <div class="stat-cell"><div class="val" id="p-chips">0</div><div class="lbl">Chips</div></div>
+      <div class="stat-cell"><div class="val" id="p-spent">$0</div><div class="lbl">Money In</div></div>
+      <div class="stat-cell"><div class="val" id="p-fee">$0</div><div class="lbl">Host Fees</div></div>
+    </div>
+    <div class="card">
+      <button class="btn btn-primary" onclick="requestBuyin()">Request Buy-In (+100 chips)</button>
+      <p class="text-muted text-center mt-8" id="buyin-fee-note">$5 per buy-in · $2.50 host fee (one-time)</p>
+    </div>
+    <div id="player-admin-panel" style="display:none">
+      <div class="card">
+        <div class="alert alert-admin">Admin access — adjust buy-ins directly.</div>
+        <div class="card-title">Adjust Buy-Ins</div>
+        <div id="player-admin-adjust-list"><p class="no-data">Loading…</p></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add Player</div>
+        <label>Player Name</label>
+        <input type="text" id="player-add-name" placeholder="e.g. Raj" />
+        <button class="btn btn-admin mt-16" onclick="playerAdminAddPlayer()">+ Add Player</button>
+        <p class="text-muted mt-8" style="font-size:0.78rem">They'll need the OTP to log in.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">My Requests</div>
+      <div id="player-request-list"><p class="no-data">No requests yet.</p></div>
+    </div>
+  </div>
+
+  <!-- SESSION HISTORY -->
+  <div id="screen-history" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">← Back</button>
+      <h2>Session History</h2>
+    </div>
+    <div id="history-list"><p class="no-data" style="padding:32px 0">No sessions archived yet.</p></div>
+  </div>
+
+  <!-- HISTORY DETAIL -->
+  <div id="screen-history-detail" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('history')">← History</button>
+      <h2 id="hd-title">Session</h2>
+    </div>
+    <div id="hd-content"></div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  POKER NIGHT — free, localStorage-only
+// ═══════════════════════════════════════════════════
+
+const BUYIN_VALUE     = 5.00;
+const HOST_FEE        = 2.50;
+const CHIPS_PER_BUYIN = 100;
+const CHIP_VALUE      = BUYIN_VALUE / CHIPS_PER_BUYIN; // $0.05
+
+// Names that get admin rights in addition to the host
+const ADMIN_NAMES = ['balaji'];
+
+let state = { session: null, currentPlayerId: null, isHost: false };
+
+// ── Storage ──────────────────────────────────────
+
+function saveSession() {
+  if (!state.session) return;
+  localStorage.setItem('pn_session_' + state.session.code, JSON.stringify(state.session));
+}
+function loadSession(code) {
+  const r = localStorage.getItem('pn_session_' + code.toUpperCase());
+  return r ? JSON.parse(r) : null;
+}
+function saveCurrentUser() {
+  localStorage.setItem('pn_current', JSON.stringify({
+    sessionCode: state.session?.code,
+    playerId: state.currentPlayerId,
+    isHost: state.isHost
+  }));
+}
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('pn_history') || '[]'); } catch { return []; }
+}
+function saveHistory(arr) { localStorage.setItem('pn_history', JSON.stringify(arr)); }
+
+// ── Helpers ──────────────────────────────────────
+
+function genId() { return Math.random().toString(36).substr(2, 9); }
+function genCode() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)];
+  return s;
+}
+function genOtp() { return String(Math.floor(100000 + Math.random() * 900000)); }
+function initials(name) {
+  return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().substr(0, 2);
+}
+function fmtDate(ts) {
+  return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function timeAgo(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return 'just now';
+  if (d < 3600000) return Math.floor(d / 60000) + 'm ago';
+  return Math.floor(d / 3600000) + 'h ago';
+}
+
+// Only Balaji has hardcoded admin rights beyond the host
+function nameIsAdmin(name) {
+  return ADMIN_NAMES.includes((name || '').trim().toLowerCase());
+}
+// Admin = current session host OR Balaji. Read from live session, never stale state.isHost.
+function currentIsAdmin() {
+  if (!state.session || !state.currentPlayerId) return false;
+  const p = state.session.players[state.currentPlayerId];
+  if (!p) return false;
+  return p.isHost || nameIsAdmin(p.name);
+}
+
+// ── Screen router ─────────────────────────────────
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Toast ─────────────────────────────────────────
+
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show';
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Host tab ──────────────────────────────────────
+
+function hostTab(name, btn) {
+  ['overview','requests','admin','settle'].forEach(t => {
+    document.getElementById('host-tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name === 'overview') renderHostOverview();
+  if (name === 'requests') renderHostRequests();
+  if (name === 'admin')    renderAdminTab();
+  if (name === 'settle')   renderBuyoutForm();
+}
+
+// ═══════════════════════════════════════════════════
+//  CREATE SESSION
+// ═══════════════════════════════════════════════════
+
+function createSession() {
+  const hostName    = document.getElementById('host-name').value.trim();
+  const sessionName = document.getElementById('session-name').value.trim();
+  if (!hostName)    { toast('Please enter your name'); return; }
+  if (!sessionName) { toast('Please enter a session name'); return; }
+
+  const hostId = genId();
+  const code   = genCode();
+
+  state.session = {
+    id: genId(), code, name: sessionName, hostId,
+    otp: genOtp(), otpTime: Date.now(),
+    status: 'active', createdAt: Date.now(),
+    players: {}, requests: []
+  };
+  state.session.players[hostId] = {
+    id: hostId, name: hostName, isHost: true, buyins: 0, chips: 0, joinTime: Date.now()
+  };
+  state.currentPlayerId = hostId;
+  state.isHost = true;
+
+  saveSession();
+  saveCurrentUser();
+  renderHostDashboard();
+  showScreen('host');
+  toast('Session created!');
+}
+
+// ═══════════════════════════════════════════════════
+//  JOIN SESSION
+// ═══════════════════════════════════════════════════
+
+let _pendingJoin = null;
+
+function joinStep1() {
+  const name = document.getElementById('join-name').value.trim();
+  if (!name) { toast('Enter your name'); return; }
+
+  const code = findActiveCode();
+  if (!code) { toast('No active session found. Ask the host to start a game.'); return; }
+
+  const session = loadSession(code);
+  if (!session) { toast('Session not found.'); return; }
+  if (session.status === 'settled') { toast('This session is already settled.'); return; }
+
+  // Match by name (case-insensitive) for host-added / returning players
+  const existing = Object.values(session.players).find(
+    p => p.name.toLowerCase() === name.toLowerCase() && !p.isHost
+  );
+
+  _pendingJoin = { code, name: existing ? existing.name : name, existingId: existing?.id || null };
+  document.getElementById('otp-input').value = '';
+  showScreen('verify-otp');
+}
+
+function findActiveCode() {
+  let latest = null, t = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key.startsWith('pn_session_')) continue;
+    try {
+      const s = JSON.parse(localStorage.getItem(key));
+      if (s && s.status === 'active' && s.otpTime > t) { t = s.otpTime; latest = s.code; }
+    } catch(e) {}
+  }
+  return latest;
+}
+
+function verifyOtp() {
+  if (!_pendingJoin) { showScreen('join-session'); return; }
+  const entered = document.getElementById('otp-input').value.trim();
+  const session = loadSession(_pendingJoin.code);
+  if (!session) { toast('Session not found.'); showScreen('join-session'); return; }
+  if (entered !== session.otp) { toast('Incorrect code. Ask the host.'); return; }
+
+  let playerId;
+  if (_pendingJoin.existingId && session.players[_pendingJoin.existingId]) {
+    playerId = _pendingJoin.existingId;
+  } else {
+    playerId = genId();
+    session.players[playerId] = {
+      id: playerId, name: _pendingJoin.name,
+      isHost: false, buyins: 0, chips: 0, joinTime: Date.now()
+    };
+  }
+
+  state.session = session;
+  state.currentPlayerId = playerId;
+  state.isHost = false;
+
+  saveSession();
+  saveCurrentUser();
+  renderPlayerDashboard();
+  showScreen('player');
+  toast('Welcome, ' + session.players[playerId].name + ' ♠');
+  _pendingJoin = null;
+}
+
+// ═══════════════════════════════════════════════════
+//  OTP
+// ═══════════════════════════════════════════════════
+
+function regenerateOtp() {
+  if (!state.session) return;
+  state.session.otp = genOtp();
+  state.session.otpTime = Date.now();
+  saveSession();
+  document.getElementById('host-otp').textContent = state.session.otp;
+  toast('New OTP generated');
+}
+
+// ═══════════════════════════════════════════════════
+//  ADD PLAYER (shared logic)
+// ═══════════════════════════════════════════════════
+
+function _addPlayer(name) {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+  const dup = Object.values(state.session.players).find(
+    p => p.name.toLowerCase() === name.toLowerCase()
+  );
+  if (dup) { toast(dup.name + ' is already in this session'); return false; }
+  const id = genId();
+  state.session.players[id] = { id, name, isHost: false, buyins: 0, chips: 0, joinTime: Date.now() };
+  saveSession();
+  return true;
+}
+
+function hostAddPlayer() {
+  const name = document.getElementById('add-player-name').value.trim();
+  if (!name) { toast('Enter player name'); return; }
+  if (_addPlayer(name)) {
+    document.getElementById('add-player-name').value = '';
+    renderAdminTab();
+    renderHostOverview();
+    toast(name + ' added. They can join with the OTP.');
+  }
+}
+
+function playerAdminAddPlayer() {
+  if (!currentIsAdmin()) return;
+  const name = document.getElementById('player-add-name').value.trim();
+  if (!name) { toast('Enter player name'); return; }
+  if (_addPlayer(name)) {
+    document.getElementById('player-add-name').value = '';
+    renderPlayerDashboard();
+    toast(name + ' added.');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  MARK AS HOST
+// ═══════════════════════════════════════════════════
+
+function markAsHost(playerId) {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+
+  const newHost = state.session.players[playerId];
+  if (!newHost) return;
+  if (newHost.isHost) { toast(newHost.name + ' is already the host'); return; }
+
+  // Remove host flag from current host
+  Object.values(state.session.players).forEach(p => { p.isHost = false; });
+
+  // Assign to new host
+  newHost.isHost = true;
+  state.session.hostId = playerId;
+
+  saveSession();
+
+  // If the current user just became host, promote their state
+  if (playerId === state.currentPlayerId) {
+    state.isHost = true;
+    saveCurrentUser();
+  }
+  // If the current user was host and just gave it away, demote
+  if (state.isHost && playerId !== state.currentPlayerId) {
+    state.isHost = false;
+    saveCurrentUser();
+  }
+
+  // Re-render whichever view is active
+  if (document.getElementById('screen-host').classList.contains('active')) {
+    renderHostOverview();
+    renderAdminTab();
+  } else {
+    renderPlayerDashboard();
+  }
+
+  toast(newHost.name + ' is now the host ★');
+}
+
+// ═══════════════════════════════════════════════════
+//  ADMIN BUY-IN ADJUSTMENT
+// ═══════════════════════════════════════════════════
+
+function adminAdjust(playerId, delta) {
+  if (!currentIsAdmin()) { toast('Admin access required'); return; }
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+
+  const player = state.session.players[playerId];
+  if (!player) return;
+  const newBuyins = player.buyins + delta;
+  if (newBuyins < 0) { toast('Buy-ins cannot go below 0'); return; }
+
+  player.buyins = newBuyins;
+  player.chips  = newBuyins * CHIPS_PER_BUYIN;
+
+  // Record in history
+  state.session.requests.push({
+    id: genId(), playerId, playerName: player.name,
+    status: 'admin', time: Date.now(),
+    chips: delta * CHIPS_PER_BUYIN,
+    value: delta * BUYIN_VALUE,
+    fee: delta * HOST_FEE,
+    note: delta > 0 ? 'Admin added buy-in' : 'Admin removed buy-in'
+  });
+
+  saveSession();
+  if (state.isHost) { renderAdminTab(); renderHostOverview(); }
+  else renderPlayerDashboard();
+  toast((delta > 0 ? '+1' : '-1') + ' buy-in for ' + player.name);
+}
+
+// ═══════════════════════════════════════════════════
+//  BUY-IN REQUEST (player)
+// ═══════════════════════════════════════════════════
+
+function requestBuyin() {
+  const fresh = loadSession(state.session.code);
+  if (!fresh) { toast('Session not found'); return; }
+  state.session = fresh;
+
+  const player = state.session.players[state.currentPlayerId];
+  if (!player) { toast('Player not found'); return; }
+
+  const pending = state.session.requests.filter(
+    r => r.playerId === state.currentPlayerId && r.status === 'pending'
+  ).length;
+  if (pending >= 1) { toast('You have a pending request. Wait for approval.'); return; }
+
+  state.session.requests.push({
+    id: genId(), playerId: state.currentPlayerId, playerName: player.name,
+    status: 'pending', time: Date.now(),
+    chips: CHIPS_PER_BUYIN, value: BUYIN_VALUE, fee: HOST_FEE
+  });
+  saveSession();
+  renderPlayerDashboard();
+  toast('Buy-in requested! Waiting for host approval…');
+}
+
+// ═══════════════════════════════════════════════════
+//  APPROVE / REJECT
+// ═══════════════════════════════════════════════════
+
+function approveRequest(id) {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+  const req = state.session.requests.find(r => r.id === id);
+  if (!req || req.status !== 'pending') { toast('Request no longer pending'); return; }
+  req.status = 'approved'; req.resolvedTime = Date.now();
+  const p = state.session.players[req.playerId];
+  if (p) { p.buyins += 1; p.chips += CHIPS_PER_BUYIN; }
+  saveSession(); renderHostRequests(); renderHostOverview();
+  toast('Approved for ' + req.playerName);
+}
+
+function rejectRequest(id) {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+  const req = state.session.requests.find(r => r.id === id);
+  if (!req || req.status !== 'pending') return;
+  req.status = 'rejected'; req.resolvedTime = Date.now();
+  saveSession(); renderHostRequests();
+  toast('Rejected for ' + req.playerName);
+}
+
+// ═══════════════════════════════════════════════════
+//  SETTLEMENT
+// ═══════════════════════════════════════════════════
+
+function calculateSettlement() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+
+  const players = Object.values(state.session.players); // host plays too
+  if (players.length < 2) { toast('Need at least 2 players to settle'); return; }
+
+  const buyouts = {};
+  let valid = true;
+  players.forEach(p => {
+    const inp = document.getElementById('buyout-' + p.id);
+    if (!inp) return;
+    const val = parseFloat(inp.value);
+    if (isNaN(val) || val < 0) { toast('Enter valid chip count for ' + p.name); valid = false; }
+    else buyouts[p.id] = val;
+  });
+  if (!valid) return;
+
+  // Host fee: flat $2.50 per non-host player, paid directly to the host.
+  // Treated as a SIDE payment outside the chip pool so chip-based net stays clean.
+  const nonHostPlayers     = players.filter(p => !p.isHost);
+  const totalFeesCollected = nonHostPlayers.length * HOST_FEE;
+
+  const summary = players.map(p => {
+    const moneyIn     = p.buyins * BUYIN_VALUE;
+    const buyoutChips = buyouts[p.id] ?? 0;
+    const buyoutValue = buyoutChips * CHIP_VALUE;
+    // Chip-pool net: purely chips out minus buy-in money
+    const chipNet  = buyoutValue - moneyIn;
+    // Session fee side payments (do not affect chip pool)
+    const totalFee  = p.isHost ? 0 : HOST_FEE;   // non-host pays $2.50 once
+    const feeIncome = p.isHost ? totalFeesCollected : 0; // host collects from all
+    const net       = chipNet - totalFee + feeIncome;
+    return { ...p, moneyIn, totalFee, feeIncome, buyoutChips, chipNet, net };
+  });
+
+  // Save for archiving
+  state.session._lastSummary = summary.map(({ name, buyins, isHost, totalFee, feeIncome, buyoutChips, chipNet, net }) =>
+    ({ name, buyins, isHost, totalFee, feeIncome, buyoutChips, chipNet, net }));
+  saveSession();
+
+  // Debt minimisation
+  const payments = minPayments(summary.map(p => ({ name: p.name, bal: +p.net.toFixed(2) })));
+
+  // Render
+  document.getElementById('settlement-table').innerHTML =
+    summary.map(p => {
+      const cls = p.net >= 0 ? 'amount-pos' : 'amount-neg';
+      return `
+        <div class="settlement-row">
+          <div>
+            <strong>${p.name}</strong>
+            <div class="text-muted" style="font-size:0.75rem;font-family:var(--font-mono)">
+              ${p.buyins} buy-in(s) · ${p.buyoutChips} chips out
+              ${p.isHost ? ` · +$${p.feeIncome.toFixed(2)} fees collected` : ` · $${p.totalFee.toFixed(2)} session fee`}
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="${cls}">${p.net >= 0 ? '+' : ''}$${p.net.toFixed(2)}</div>
+            <div class="text-muted" style="font-size:0.72rem">net</div>
+          </div>
+        </div>`;
+    }).join('') || '<p class="no-data">No data.</p>';
+
+  document.getElementById('payment-list').innerHTML = payments.length === 0
+    ? '<p class="no-data">Everyone is square!</p>'
+    : payments.map(pay =>
+        `<div class="payment-arrow">
+          <strong>${pay.from}</strong> pays <strong>${pay.to}</strong>
+          &nbsp;→&nbsp; <span class="gold mono">$${pay.amount.toFixed(2)}</span>
+        </div>`).join('');
+
+  document.getElementById('settlement-result').style.display = 'block';
+  toast('Settlement calculated!');
+  setTimeout(() => document.getElementById('settlement-result').scrollIntoView({ behavior: 'smooth' }), 100);
+}
+
+function minPayments(balances) {
+  const payments = [];
+  const debtors   = balances.filter(b => b.bal < -0.01).map(b => ({...b})).sort((a,b) => a.bal - b.bal);
+  const creditors = balances.filter(b => b.bal >  0.01).map(b => ({...b})).sort((a,b) => b.bal - a.bal);
+  let di = 0, ci = 0;
+  while (di < debtors.length && ci < creditors.length) {
+    const d = debtors[di], c = creditors[ci];
+    const amt = Math.min(-d.bal, c.bal);
+    if (amt > 0.01) payments.push({ from: d.name, to: c.name, amount: +amt.toFixed(2) });
+    d.bal += amt; c.bal -= amt;
+    if (Math.abs(d.bal) < 0.01) di++;
+    if (Math.abs(c.bal) < 0.01) ci++;
+  }
+  return payments;
+}
+
+// ═══════════════════════════════════════════════════
+//  ARCHIVE SESSION
+// ═══════════════════════════════════════════════════
+
+function archiveSession() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+  if (!state.session._lastSummary) { toast('Run settlement calculation first'); return; }
+
+  state.session.status = 'settled';
+  state.session.settledAt = Date.now();
+  saveSession();
+
+  const history = getHistory();
+  const idx = history.findIndex(h => h.code === state.session.code);
+  const snap = {
+    code: state.session.code,
+    name: state.session.name,
+    createdAt: state.session.createdAt,
+    settledAt: state.session.settledAt,
+    hostName: state.session.players[state.session.hostId]?.name || 'Unknown',
+    players: state.session._lastSummary
+  };
+  if (idx >= 0) history[idx] = snap; else history.unshift(snap);
+  saveHistory(history);
+
+  localStorage.removeItem('pn_current');
+  toast('Session archived!');
+  showScreen('home');
+}
+
+// ═══════════════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════════════
+
+function openHistory() {
+  const history = getHistory();
+  if (!history.length) {
+    document.getElementById('history-list').innerHTML =
+      '<p class="no-data" style="padding:32px 0">No sessions archived yet.<br>Archive a settled session to see it here.</p>';
+  } else {
+    document.getElementById('history-list').innerHTML = history.map((s, i) => `
+      <div class="history-card" onclick="openHistoryDetail(${i})">
+        <div class="history-card-top">
+          <div class="history-name">${s.name}</div>
+          <span class="status-badge settled">settled</span>
+        </div>
+        <div class="history-meta">${fmtDate(s.settledAt)} · Host: ${s.hostName}</div>
+        <div class="history-players">
+          ${(s.players || []).map(p => `<span class="history-player-tag">${p.name}</span>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+  showScreen('history');
+}
+
+function openHistoryDetail(idx) {
+  const s = getHistory()[idx];
+  if (!s) return;
+  document.getElementById('hd-title').textContent = s.name;
+
+  const payments = minPayments((s.players || []).map(p => ({ name: p.name, bal: +p.net.toFixed(2) })));
+
+  let html = `
+    <div class="card">
+      <div class="card-title">Session Info</div>
+      <div class="hd-row"><span class="text-muted">Date</span><span>${fmtDate(s.settledAt)}</span></div>
+      <div class="hd-row"><span class="text-muted">Host</span><span>${s.hostName}</span></div>
+      <div class="hd-row"><span class="text-muted">Players</span><span>${(s.players||[]).length}</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Player Summary</div>
+      ${(s.players || []).map(p => `
+        <div class="hd-row">
+          <div>
+            <div style="font-weight:600">${p.name}</div>
+            <div class="text-muted mono" style="font-size:0.72rem">${p.buyins} buy-in(s) · ${p.buyoutChips} chips out</div>
+          </div>
+          <div class="${p.net >= 0 ? 'amount-pos' : 'amount-neg'}">${p.net >= 0 ? '+' : ''}$${p.net.toFixed(2)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Payments Made</div>
+      ${payments.length === 0
+        ? '<p class="no-data">Everyone was square.</p>'
+        : payments.map(pay =>
+            `<div class="payment-arrow">
+              <strong>${pay.from}</strong> paid <strong>${pay.to}</strong>
+              &nbsp;→&nbsp; <span class="gold mono">$${pay.amount.toFixed(2)}</span>
+            </div>`).join('')}
+    </div>`;
+
+  document.getElementById('hd-content').innerHTML = html;
+  showScreen('history-detail');
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER: HOST
+// ═══════════════════════════════════════════════════
+
+function renderHostDashboard() {
+  document.getElementById('host-session-title').textContent = state.session.name;
+  document.getElementById('host-otp').textContent = state.session.otp;
+  renderHostOverview();
+}
+
+function renderHostOverview() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+
+  const all     = Object.values(state.session.players);
+  const nonHost = all.filter(p => !p.isHost); // used only for player count
+
+  document.getElementById('host-total-buyin').textContent  = '$' + all.reduce((s,p) => s + p.buyins * BUYIN_VALUE, 0).toFixed(2);
+  document.getElementById('host-total-fee').textContent    = '$' + (all.filter(p => !p.isHost).length * HOST_FEE).toFixed(2);
+  document.getElementById('host-total-chips').textContent  = all.reduce((s,p) => s + p.chips, 0);
+  document.getElementById('host-player-count').textContent = nonHost.length;
+
+  const pending = state.session.requests.filter(r => r.status === 'pending').length;
+  const badge = document.getElementById('pending-badge');
+  badge.textContent = pending > 0 ? ` (${pending})` : '';
+  badge.style.color = pending > 0 ? 'var(--warning)' : '';
+
+  document.getElementById('host-player-list').innerHTML = all.length ? all.map(p => {
+    const hostTag  = p.isHost ? ' <span class="status-badge host" style="font-size:0.6rem;padding:2px 6px">host</span>' : '';
+    const adminTag = nameIsAdmin(p.name) && !p.isHost ? ' <span class="status-badge admin" style="font-size:0.6rem;padding:2px 6px">admin</span>' : '';
+    const markBtn  = !p.isHost ? `<button class="adj-btn" style="width:auto;padding:0 8px;font-size:0.68rem;white-space:nowrap" onclick="markAsHost('${p.id}')" title="Make host">★ Host</button>` : '';
+    return `
+      <div class="player-row">
+        <div class="player-avatar">${initials(p.name)}</div>
+        <div class="player-info">
+          <div class="player-name">${p.name}${hostTag}${adminTag}</div>
+          <div class="player-meta">${p.buyins} buy-in(s)</div>
+        </div>
+        <div class="player-chips" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span>${p.chips} chips</span>
+          ${markBtn}
+        </div>
+      </div>`;
+  }).join('') : '<p class="no-data">No players yet.</p>';
+}
+
+function renderAdminTab() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+  const players = Object.values(state.session.players); // host included
+  document.getElementById('admin-adjust-list').innerHTML = players.length ? players.map(p => `
+    <div class="adj-row">
+      <div class="av-sm">${initials(p.name)}</div>
+      <div class="pname">${p.name}${p.isHost ? ' <span class="status-badge host" style="font-size:0.6rem;padding:2px 5px">host</span>' : ''}</div>
+      <div class="bi-count">${p.buyins} buy-in(s)</div>
+      ${!p.isHost ? `<button class="adj-btn" style="width:auto;padding:0 7px;font-size:0.68rem" onclick="markAsHost('${p.id}')" title="Make host">★</button>` : '<div style="width:30px"></div>'}
+      <button class="adj-btn" onclick="adminAdjust('${p.id}',-1)" title="Remove">−</button>
+      <button class="adj-btn" onclick="adminAdjust('${p.id}',+1)" title="Add">+</button>
+    </div>`).join('') : '<p class="no-data">No players yet.</p>';
+}
+
+function renderHostRequests() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+
+  const pending = state.session.requests.filter(r => r.status === 'pending');
+  const history = state.session.requests.filter(r => r.status !== 'pending').slice(-20).reverse();
+
+  document.getElementById('host-pending-requests').innerHTML = pending.length ? pending.map(r => `
+    <div class="request-card pending">
+      <div class="request-top">
+        <div class="request-name">${r.playerName}</div>
+        <div class="request-time">${timeAgo(r.time)}</div>
+      </div>
+      <div class="request-detail">+${r.chips} chips · $${r.value.toFixed(2)}</div>
+      <div class="btn-row mt-8">
+        <button class="btn btn-success btn-sm" onclick="approveRequest('${r.id}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm"  onclick="rejectRequest('${r.id}')">✗ Reject</button>
+      </div>
+    </div>`).join('') : '<p class="no-data">No pending requests.</p>';
+
+  document.getElementById('host-request-history').innerHTML = history.length ? history.map(r => `
+    <div class="request-card ${r.status}">
+      <div class="request-top">
+        <div class="request-name">${r.playerName}</div>
+        <span class="status-badge ${r.status}">${r.status === 'admin' ? (r.note||'Admin') : r.status}</span>
+      </div>
+      <div class="request-detail">${timeAgo(r.time)}</div>
+    </div>`).join('') : '<p class="no-data">No history yet.</p>';
+
+  const badge = document.getElementById('pending-badge');
+  badge.textContent = pending.length > 0 ? ` (${pending.length})` : '';
+  badge.style.color = pending.length > 0 ? 'var(--warning)' : '';
+}
+
+function renderBuyoutForm() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+  const players = Object.values(state.session.players); // host included
+  document.getElementById('buyout-form').innerHTML = players.length ? players.map(p => `
+    <div class="buyout-row">
+      <div class="av-sm">${initials(p.name)}</div>
+      <label for="buyout-${p.id}">${p.name} <span class="text-muted">(${p.chips} in)</span></label>
+      <input type="number" id="buyout-${p.id}" min="0" placeholder="0" value="${p.chips}" />
+    </div>`).join('') : '<p class="no-data">No players to settle.</p>';
+  document.getElementById('settlement-result').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER: PLAYER
+// ═══════════════════════════════════════════════════
+
+function renderPlayerDashboard() {
+  const fresh = loadSession(state.session.code);
+  if (fresh) state.session = fresh;
+
+  const player = state.session.players[state.currentPlayerId];
+  if (!player) return;
+
+  const admin = currentIsAdmin();
+  document.getElementById('player-greeting').textContent = '♠ ' + player.name;
+  document.getElementById('player-admin-badge').style.display = admin ? 'inline-block' : 'none';
+  document.getElementById('player-admin-panel').style.display  = admin ? 'block' : 'none';
+
+  document.getElementById('p-buyins').textContent = player.buyins;
+  document.getElementById('p-chips').textContent  = player.chips;
+  document.getElementById('p-spent').textContent  = '$' + (player.buyins * BUYIN_VALUE).toFixed(2);
+  const feeCell = document.getElementById('p-fee').closest('.stat-cell');
+  const feeNote = document.getElementById('buyin-fee-note');
+  if (player.isHost) {
+    feeCell.style.display = 'none';
+    if (feeNote) feeNote.style.display = 'none';
+  } else {
+    feeCell.style.display = '';
+    if (feeNote) feeNote.style.display = '';
+    document.getElementById('p-fee').textContent = '$' + HOST_FEE.toFixed(2);
+  }
+
+  if (admin) {
+    const players = Object.values(state.session.players); // host included
+    document.getElementById('player-admin-adjust-list').innerHTML = players.length ? players.map(p => `
+      <div class="adj-row">
+        <div class="av-sm">${initials(p.name)}</div>
+        <div class="pname">${p.name}${p.isHost ? ' <span class="status-badge host" style="font-size:0.6rem;padding:2px 5px">host</span>' : ''}</div>
+        <div class="bi-count">${p.buyins} buy-in(s)</div>
+        ${!p.isHost ? `<button class="adj-btn" style="width:auto;padding:0 7px;font-size:0.68rem" onclick="markAsHost('${p.id}')" title="Make host">★</button>` : '<div style="width:30px"></div>'}
+        <button class="adj-btn" onclick="adminAdjust('${p.id}',-1)">−</button>
+        <button class="adj-btn" onclick="adminAdjust('${p.id}',+1)">+</button>
+      </div>`).join('') : '<p class="no-data">No players yet.</p>';
+  }
+
+  const myReqs = state.session.requests.filter(r => r.playerId === state.currentPlayerId).slice(-10).reverse();
+  document.getElementById('player-request-list').innerHTML = myReqs.length ? myReqs.map(r => `
+    <div class="request-card ${r.status}">
+      <div class="request-top">
+        <span>${r.chips > 0 ? '+' : ''}${r.chips} chips</span>
+        <span class="status-badge ${r.status}">${r.status === 'admin' ? (r.note||'Admin') : r.status}</span>
+      </div>
+      <div class="request-detail">${timeAgo(r.time)}</div>
+    </div>`).join('') : '<p class="no-data">No requests yet.</p>';
+}
+
+// ═══════════════════════════════════════════════════
+//  AUTO-REFRESH every 5s
+// ═══════════════════════════════════════════════════
+
+setInterval(() => {
+  if (!state.session) return;
+  if (document.getElementById('screen-player').classList.contains('active'))
+    renderPlayerDashboard();
+  if (document.getElementById('screen-host').classList.contains('active') && state.isHost) {
+    renderHostOverview();
+    const fresh = loadSession(state.session.code);
+    if (fresh) {
+      const n = fresh.requests.filter(r => r.status === 'pending').length;
+      const badge = document.getElementById('pending-badge');
+      badge.textContent = n > 0 ? ` (${n})` : '';
+      badge.style.color = n > 0 ? 'var(--warning)' : '';
+    }
+  }
+}, 5000);
+
+// ═══════════════════════════════════════════════════
+//  BOOT — restore last session on reload
+// ═══════════════════════════════════════════════════
+
+(function boot() {
+  const saved = JSON.parse(localStorage.getItem('pn_current') || 'null');
+  if (!saved?.sessionCode) return;
+  const session = loadSession(saved.sessionCode);
+  if (!session) return;
+
+  state.session = session;
+  state.currentPlayerId = saved.playerId;
+  state.isHost = saved.isHost;
+
+  if (saved.isHost) { renderHostDashboard(); showScreen('host'); }
+  else {
+    const player = session.players[saved.playerId];
+    if (player) { renderPlayerDashboard(); showScreen('player'); }
+  }
+})();
+</script>
+</body>
+</html>
